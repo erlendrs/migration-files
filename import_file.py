@@ -60,7 +60,6 @@ def import_documents(df):
 
     return IMPORT_FILE
 
-
 def create_filetype(filename):
     """Fyll ut felt FILE_TYPE basert på filekstensjon"""
 
