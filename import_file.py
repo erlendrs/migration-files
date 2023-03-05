@@ -54,7 +54,7 @@ def import_documents(df):
     IMPORT_FILE.ROWSTATE = 'Frigitt'
     IMPORT_FILE.MCH_CODE = ""
     IMPORT_FILE.CONTRACT = 10
-    #IMPORT_FILE.REFERANSE = np.nan
+    IMPORT_FILE.REFERANSE = np.nan
     IMPORT_FILE.dropna(subset=['DOC_CLASS', 'FORMAT_SIZE'], inplace=True)
     IMPORT_FILE.set_index('DOC_CLASS', inplace=True)
 
