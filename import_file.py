@@ -20,7 +20,7 @@ if facility:
 
 folder_path = st.text_input("Enter the path of the folder: ")
 
-def import_documents(df, facility):
+def import_documents(df):
     IMPORT_FILE = pd.DataFrame(columns=['DOC_CLASS', 'DOC_NO', 'DOC_SHEET', 'DOC_REV', 'FORMAT_SIZE', 'REV_NO',
        'TITLE', 'DOC_TYPE', 'INFO', 'FILE_NAME', 'LOCATION_NAME', 'PATH',
        'FILE_TYPE', 'FILE_NAME2', 'FILE_TYPE2', 'DOC_TYPE2', 'FILE_NAME3',
@@ -30,9 +30,9 @@ def import_documents(df, facility):
     doc_class = ["ANLEGGSDOK", "TEGNINGER"]
 
     IMPORT_FILE.TITLE = list(df)
-    IMPORT_FILE.TITLE = IMPORT_FILE.TITLE.apply(lambda x: x.rsplit('.', 1)[0]) + ", " + facility
+    IMPORT_FILE.TITLE = IMPORT_FILE.TITLE.apply(lambda x: x.rsplit('.', 1)[0])
     IMPORT_FILE.FILE_NAME = list(df)
-    IMPORT_FILE.DOC_CLASS = ""
+    IMPORT_FILE.DOC_CLASS =  ""#IMPORT_FILE.DOC_CLASS.astype("category").cat.add_categories(doc_class)
     IMPORT_FILE.DOC_NO = np.nan
     IMPORT_FILE.DOC_SHEET = 1
     IMPORT_FILE.DOC_REV = 1
@@ -57,8 +57,17 @@ def import_documents(df, facility):
     IMPORT_FILE.REFERANSE = np.nan
     IMPORT_FILE.dropna(subset=['DOC_CLASS', 'FORMAT_SIZE'], inplace=True)
     IMPORT_FILE.set_index('DOC_CLASS', inplace=True)
+    #IMPORT_FILE.reset_index(inplace=True, drop=True) 
 
     return IMPORT_FILE
+
+
+def create_new_document_titles(df):
+    """Lager ny tittel bsasert på dokumenttype, leverandørs tittel, dokumentnummer og anleggskode"""
+
+    df['Ny tittel'] = df['Title'] + ', ' +  df['Dokumentnummer'] + f', {substation} '
+
+    return df
 
 def create_filetype(filename):
     """Fyll ut felt FILE_TYPE basert på filekstensjon"""
@@ -76,8 +85,9 @@ def list_files(folder_path):
     df["File Name"] =  df["Path"].apply(lambda x: x.split("/")[-1])
     return list(df["File Name"])
 
-df = import_documents(list_files(folder_path), facility)
+df = import_documents(list_files(folder_path))
 
+#if st.button("Lag IFS dataframe"):  
 edited_df = st.experimental_data_editor(df, use_container_width=True)
 
 if st.button('Download CSV'):
