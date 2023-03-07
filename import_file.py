@@ -1,24 +1,16 @@
 import streamlit as st
 import numpy as np
-import datetime as dt
 import shutil
 import os
 import pandas as pd
 import base64
 
-st.title('Lag importfil til IFS fra filsti')
 
-username = st.text_input(label='Steg 1: Skriv inn ditt kortnavn')
-
-if username:
-    st.success(f'Kortnavn lagret')
-
-facility = st.text_input(label='Steg 2: Skriv inn navn og kortnavn på anlegg (eks. FAG Fagrafjell)')
-
-if facility:
-    st.success(f'Du har valgt {facility} stasjon')
-
-folder_path = st.text_input("Enter the path of the folder: ")
+doc_class_drop_down = pd.DataFrame([{"DOC_CLASS": None},])
+doc_class = ["ANLEGGSDOK", "TEGNINGER"]
+format_size_drop_down = pd.DataFrame([{"FORMAT_SIZE": None},])
+format_size = ["TEKDOK", "TEKRAP", "PRPROT", "LISTE",
+               "MONT", "SKJEMA", "ARR", "FUNDT"]
 
 def import_documents(df):
     IMPORT_FILE = pd.DataFrame(columns=['DOC_CLASS', 'DOC_NO', 'DOC_SHEET', 'DOC_REV', 'FORMAT_SIZE', 'REV_NO',
@@ -27,16 +19,14 @@ def import_documents(df):
        'FILE_TYPE3', 'DOC_TYPE3', 'DT_CRE', 'USER_CREATED', 'ROWSTATE',
        'MCH_CODE', 'CONTRACT', 'REFERANSE'])
 
-    doc_class = ["ANLEGGSDOK", "TEGNINGER"]
-
     IMPORT_FILE.TITLE = list(df)
     IMPORT_FILE.TITLE = IMPORT_FILE.TITLE.apply(lambda x: x.rsplit('.', 1)[0])
     IMPORT_FILE.FILE_NAME = list(df)
-    IMPORT_FILE.DOC_CLASS =  ""#IMPORT_FILE.DOC_CLASS.astype("category").cat.add_categories(doc_class)
+    IMPORT_FILE.DOC_CLASS =  (doc_class_drop_down["DOC_CLASS"].astype("category").cat.add_categories(doc_class))
     IMPORT_FILE.DOC_NO = np.nan
     IMPORT_FILE.DOC_SHEET = 1
     IMPORT_FILE.DOC_REV = 1
-    IMPORT_FILE.FORMAT_SIZE = ""
+    IMPORT_FILE.FORMAT_SIZE = (format_size_drop_down["FORMAT_SIZE"].astype("category").cat.add_categories(format_size))
     IMPORT_FILE.REV_NO = 1
     IMPORT_FILE.DOC_TYPE = 'ORIGINAL'
     IMPORT_FILE.INFO = np.nan
@@ -49,15 +39,14 @@ def import_documents(df):
     IMPORT_FILE.FILE_NAME3 = np.nan
     IMPORT_FILE.FILE_TYPE3 = np.nan
     IMPORT_FILE.DOC_TYPE3 = np.nan
-    IMPORT_FILE.DT_CRE = dt.datetime.today().strftime("%d.%m.%y")
+    IMPORT_FILE.DT_CRE = pd.datetime.today().strftime("%d.%m.%y")
     IMPORT_FILE.USER_CREATED = username.upper()
     IMPORT_FILE.ROWSTATE = 'Frigitt'
     IMPORT_FILE.MCH_CODE = ""
     IMPORT_FILE.CONTRACT = 10
     IMPORT_FILE.REFERANSE = np.nan
-    IMPORT_FILE.dropna(subset=['DOC_CLASS', 'FORMAT_SIZE'], inplace=True)
-    IMPORT_FILE.set_index('DOC_CLASS', inplace=True)
-    #IMPORT_FILE.reset_index(inplace=True, drop=True) 
+    #IMPORT_FILE.dropna(subset=['DOC_CLASS', 'FORMAT_SIZE'], inplace=True)
+    #IMPORT_FILE.set_index('DOC_CLASS', inplace=True)
 
     return IMPORT_FILE
 
@@ -85,9 +74,20 @@ def list_files(folder_path):
     df["File Name"] =  df["Path"].apply(lambda x: x.split("/")[-1])
     return list(df["File Name"])
 
-df = import_documents(list_files(folder_path))
+st.title('Lag importfil til IFS fra filsti')
 
-#if st.button("Lag IFS dataframe"):  
+username = st.text_input(label='Steg 1: Skriv inn ditt kortnavn')
+
+if username:
+    st.success(f'Kortnavn lagret')
+
+facility = st.text_input(label='Steg 2: Skriv inn navn og kortnavn på anlegg (eks. FAG Fagrafjell)')
+
+if facility:
+    st.success(f'Du har valgt {facility} stasjon')
+
+folder_path = st.text_input("Enter the path of the folder: ")
+df = import_documents(list_files(folder_path))
 edited_df = st.experimental_data_editor(df, use_container_width=True)
 
 if st.button('Download CSV'):
