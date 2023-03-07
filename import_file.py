@@ -12,7 +12,7 @@ format_size_drop_down = pd.DataFrame([{"FORMAT_SIZE": None},])
 format_size = ["TEKDOK", "TEKRAP", "PRPROT", "LISTE",
                "MONT", "SKJEMA", "ARR", "FUNDT"]
 
-def import_documents(df):
+def import_documents(df, facility=""):
     IMPORT_FILE = pd.DataFrame(columns=['DOC_CLASS', 'DOC_NO', 'DOC_SHEET', 'DOC_REV', 'FORMAT_SIZE', 'REV_NO',
        'TITLE', 'DOC_TYPE', 'INFO', 'FILE_NAME', 'LOCATION_NAME', 'PATH',
        'FILE_TYPE', 'FILE_NAME2', 'FILE_TYPE2', 'DOC_TYPE2', 'FILE_NAME3',
@@ -20,7 +20,7 @@ def import_documents(df):
        'MCH_CODE', 'CONTRACT', 'REFERANSE'])
 
     IMPORT_FILE.TITLE = list(df)
-    IMPORT_FILE.TITLE = IMPORT_FILE.TITLE.apply(lambda x: x.rsplit('.', 1)[0])
+    IMPORT_FILE.TITLE = IMPORT_FILE.TITLE.apply(lambda x: x.rsplit('.', 1)[0]) + ", " + facility
     IMPORT_FILE.FILE_NAME = list(df)
     IMPORT_FILE.DOC_CLASS =  (doc_class_drop_down["DOC_CLASS"].astype("category").cat.add_categories(doc_class))
     IMPORT_FILE.DOC_NO = np.nan
@@ -51,12 +51,12 @@ def import_documents(df):
     return IMPORT_FILE
 
 
-def create_new_document_titles(df):
+def create_new_document_titles(title, facility):
     """Lager ny tittel bsasert på dokumenttype, leverandørs tittel, dokumentnummer og anleggskode"""
 
-    df['Ny tittel'] = df['Title'] + ', ' +  df['Dokumentnummer'] + f', {substation} '
+    title = title + ", " + facility
 
-    return df
+    return title
 
 def create_filetype(filename):
     """Fyll ut felt FILE_TYPE basert på filekstensjon"""
@@ -87,8 +87,9 @@ if facility:
     st.success(f'Du har valgt {facility} stasjon')
 
 folder_path = st.text_input("Enter the path of the folder: ")
-df = import_documents(list_files(folder_path))
-edited_df = st.experimental_data_editor(df, use_container_width=True)
+if folder_path:
+    df = import_documents(list_files(folder_path), facility)
+    edited_df = st.experimental_data_editor(df, use_container_width=True)
 
 if st.button('Download CSV'):
     csv = edited_df.to_csv(index=False)
