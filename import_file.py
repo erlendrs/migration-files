@@ -11,6 +11,7 @@ doc_class = ["ANLEGGSDOK", "TEGNINGER"]
 format_size_drop_down = pd.DataFrame([{"FORMAT_SIZE": None},])
 format_size = ["TEKDOK", "TEKRAP", "PRPROT", "LISTE",
                "MONT", "SKJEMA", "ARR", "FUNDT"]
+format_size = sorted(format_size)
 
 def import_documents(df, facility=""):
     IMPORT_FILE = pd.DataFrame(columns=['DOC_CLASS', 'DOC_NO', 'DOC_SHEET', 'DOC_REV', 'FORMAT_SIZE', 'REV_NO',
@@ -18,14 +19,15 @@ def import_documents(df, facility=""):
        'FILE_TYPE', 'FILE_NAME2', 'FILE_TYPE2', 'DOC_TYPE2', 'FILE_NAME3',
        'FILE_TYPE3', 'DOC_TYPE3', 'DT_CRE', 'USER_CREATED', 'ROWSTATE',
        'MCH_CODE', 'CONTRACT', 'REFERANSE'])
-
+    
     IMPORT_FILE.TITLE = list(df)
     IMPORT_FILE.TITLE = IMPORT_FILE.TITLE.apply(lambda x: x.rsplit('.', 1)[0]) + ", " + facility
     IMPORT_FILE.FILE_NAME = list(df)
-    IMPORT_FILE.DOC_CLASS =  (doc_class_drop_down["DOC_CLASS"].astype("category").cat.add_categories(doc_class))
+    IMPORT_FILE.DOC_CLASS = (doc_class_drop_down["DOC_CLASS"].astype("category").cat.add_categories(doc_class))
     IMPORT_FILE.DOC_NO = np.nan
     IMPORT_FILE.DOC_SHEET = 1
     IMPORT_FILE.DOC_REV = 1
+    IMPORT_FILE.FORMAT_SIZE = IMPORT_FILE.DOC_CLASS
     IMPORT_FILE.FORMAT_SIZE = (format_size_drop_down["FORMAT_SIZE"].astype("category").cat.add_categories(format_size))
     IMPORT_FILE.REV_NO = 1
     IMPORT_FILE.DOC_TYPE = 'ORIGINAL'
@@ -50,6 +52,12 @@ def import_documents(df, facility=""):
 
     return IMPORT_FILE
 
+def check_for_comma_in_file_name(df):
+    #df.ERROR = df['FILE_NAME'].str.contains(',')
+    #df['Error'] = df['FILE_NAME'].apply(lambda x: x if ',' not in x else 'Value contains a comma')
+    mask = df['FILE_NAME'].str.contains(',')
+    df = df[mask]
+    return df['FILE_NAME']
 
 def create_new_document_titles(title, facility):
     """Lager ny tittel bsasert på dokumenttype, leverandørs tittel, dokumentnummer og anleggskode"""
@@ -89,15 +97,19 @@ if facility:
 folder_path = st.text_input("Enter the path of the folder: ")
 if folder_path:
     df = import_documents(list_files(folder_path), facility)
-    edited_df = st.experimental_data_editor(df, use_container_width=True)
-
-if st.button('Download CSV'):
-    csv = edited_df.to_csv(index=False)
-    date = pd.datetime.today().strftime("%d.%m.%y")
-    number_of_files = edited_df.FILE_TYPE.count() + edited_df.FILE_TYPE2.count()
-    b64 = base64.b64encode(csv.encode()).decode()  # Encode the CSV data
-    href = f'<a href="data:file/csv;base64,{b64}" download="Importfil til IFS med {number_of_files} filer ({date}).csv">Last ned CSV for filimport til IFS med {number_of_files} filer</a>'
-    st.markdown(href, unsafe_allow_html=True)
+    error = check_for_comma_in_file_name(df)
+    if len(error) != 0:
+        st.error("Følgende filer inneholder komma og må fikses")
+        st.dataframe(error)
+    else:
+        edited_df = st.experimental_data_editor(df, use_container_width=True)
+        if st.button('Download CSV'):
+            csv = edited_df.to_csv(index=False)
+            date = pd.datetime.today().strftime("%d.%m.%y")
+            number_of_files = edited_df.FILE_TYPE.count() + edited_df.FILE_TYPE2.count()
+            b64 = base64.b64encode(csv.encode()).decode()  # Encode the CSV data
+            href = f'<a href="data:file/csv;base64,{b64}" download="Importfil til IFS med {number_of_files} filer ({date}).csv">Last ned CSV for filimport til IFS med {number_of_files} filer</a>'
+            st.markdown(href, unsafe_allow_html=True)
 
 st.title("File Mover")
 
