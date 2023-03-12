@@ -74,9 +74,6 @@ def main():
     def rename_file(df, folder_path):
 
         remove_comma = lambda x: x.replace(",", "")
-
-        # apply the lambda function to each filename in the Series
-        #new_filenames = df["FILE_NAME"].apply(remove_comma)
         new_filenames = df["FILE_NAME"].tolist()
 
         for file in new_filenames:
