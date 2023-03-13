@@ -22,7 +22,6 @@ folder_path = folder_path.strip()
 
 def main():
 
-
     def import_files(df):
         IMPORT_FILE = pd.DataFrame(columns=['DOC_CLASS', 'DOC_NO', 'DOC_SHEET', 'DOC_REV', 'FORMAT_SIZE', 'REV_NO',
         "DOCUMENT_TYPE", 'TITLE', 'DOC_TYPE', 'INFO', 'FILE_NAME', 'LOCATION_NAME', 'PATH',
@@ -146,11 +145,11 @@ def main():
                 st.dataframe(renamed_files)
 
         else:
-            df2 = st.experimental_data_editor(df, use_container_width=True, key="data_editor")
+            df = st.experimental_data_editor(df, use_container_width=True, key="data_editor")
             st.write("Endringslogg:")
             st.write(st.session_state["data_editor"]) 
             if st.button('Lag lastefil'):
-                edited_df = create_new_document_titles(df2)
+                edited_df = create_new_document_titles(df)
                 edited_df = create_doc_attributes(edited_df)
                 edited_df = import_documents(edited_df.drop(columns=['DOCUMENT_TYPE']))
                 st.dataframe(edited_df, use_container_width=True)
