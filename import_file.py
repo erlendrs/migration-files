@@ -29,7 +29,8 @@ def main():
         'FILE_TYPE', 'FILE_NAME2', 'FILE_TYPE2', 'DOC_TYPE2', 'FILE_NAME3',
         'FILE_TYPE3', 'DOC_TYPE3', 'DT_CRE', 'USER_CREATED', 'ROWSTATE',
         'MCH_CODE', 'CONTRACT', 'REFERANSE'])
-        
+        doc_type_drop_down = pd.DataFrame([{"DOCUMENT_TYPE": None},])
+
         IMPORT_FILE.TITLE = list(df)
         IMPORT_FILE.FILE_NAME = list(df)
         IMPORT_FILE.TITLE = IMPORT_FILE.TITLE.apply(lambda x: x.rsplit('.', 1)[0]) + ", " + facility
@@ -121,16 +122,17 @@ def main():
                 "Sjekkliste montasje": ["ANLEGGSDOK", "TEKRAP"],
                 
                 # TEGNINGER
+                "Armatur": ["TEGNINGER", "DETALJ"],
+                "Detaljtegning": ["TEGNINGER", "DETALJ"],
                 'Målskisse': ['TEGNINGER', 'MONT'],
                 'Fundamenttegning': ['TEGNINGER', 'FUNDT'],
                 'Interne strømløpsskjema': ['TEGNINGER', 'SKJEMA'],
                 'Stativtegning': ['TEGNINGER', 'MONT'],
-                
+                "Montasjetegning": ["TEGNINGER", "MONT"],
                     }
-    doc_type_drop_down = pd.DataFrame([{"DOCUMENT_TYPE": None},])
+    
     doc_type = ["Målskisse", "Interne strømløpsskjema", 'Drift-, Montasje- og Vedlikeholdsmanual',  'Prøveprotokoll', 'Stativtegning',
-                "Sjekkliste montasje", "FAT-rapport",
-                ]
+                "Sjekkliste montasje", "FAT-rapport", "Detaljtegning", "Armatur", "Montasjetegning"]
     doc_type = sorted(doc_type)
     
     if folder_path:
@@ -144,16 +146,18 @@ def main():
                 st.dataframe(renamed_files)
 
         else:
-            df2 = st.experimental_data_editor(df, use_container_width=True)
+            df2 = st.experimental_data_editor(df, use_container_width=True, key="data_editor")
+            st.write("Endringslogg:")
+            st.write(st.session_state["data_editor"]) 
             if st.button('Lag lastefil'):
                 edited_df = create_new_document_titles(df2)
                 edited_df = create_doc_attributes(edited_df)
                 edited_df = import_documents(edited_df.drop(columns=['DOCUMENT_TYPE']))
                 st.dataframe(edited_df, use_container_width=True)
-                csv = edited_df.to_csv(index=False)
+                csv = edited_df.to_csv(sep=";", encoding="latin-1", index=False)
                 date = pd.datetime.today().strftime("%d.%m.%y")
                 number_of_files = edited_df.FILE_TYPE.count() + edited_df.FILE_TYPE2.count()
-                b64 = base64.b64encode(csv.encode()).decode()  # Encode the CSV data
+                b64 = base64.b64encode(csv.encode("utf-8")).decode()  # Encode the CSV data
                 href = f'<a href="data:file/csv;base64,{b64}" download="Importfil til IFS med {number_of_files} filer ({date}).csv">Last ned CSV for filimport til IFS med {number_of_files} filer</a>'
                 st.markdown(href, unsafe_allow_html=True)
 
@@ -162,7 +166,7 @@ def main():
     source_folder = folder_path
     target_folder = st.text_input("Enter the path to the target folder:")
 
-    if st.button("Move files"):
+    if st.button("Flytt filer til J disk"):
         if not os.path.exists(source_folder):
             st.error("Source folder does not exist!")
         elif not os.path.exists(target_folder):
